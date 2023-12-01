@@ -1,27 +1,81 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using Microsoft.VisualBasic;
+
+public record Challenge(int year, int day)
+{
+    public string ReadInput(string filename)
+    {
+        var paddedDay = day.ToString().PadLeft(2, '0');
+        return File.ReadAllText($"./res/Year{year}/Day{paddedDay}/{filename}");
+    }
+}
+
+public delegate T Solve<T>(string input);
+
+public class Part<T> where T : struct
+{
+    private string name;
+    private Solve<T> solve;
+
+    public Part(string name, Solve<T> solve)
+    {
+        this.name = name;
+        this.solve = solve;
+    }
+
+    public string Test(T expected, string input)
+    {
+        var actual = solve(input);
+        if (EqualityComparer<T>.Default.Equals(actual, expected))
+        {
+            return $"[TEST] Part {name}: PASS";
+        }
+        else
+        {
+            return $"[TEST] Part {name}: FAIL (expected: {expected}, found {actual})";
+        }
+    }
+
+    public string Run(string input)
+    {
+        var watch = Stopwatch.StartNew();
+        var result = solve(input);
+        watch.Stop();
+
+        var nanosecondsPerTick = 1_000L * 1_000L * 1_000L / Stopwatch.Frequency;
+        var deltaInMicroseconds = watch.ElapsedTicks / nanosecondsPerTick / 1_000.0;
+        return $"""
+        {name} ({deltaInMicroseconds} µs):
+        {result}
+        """;
+    }
+}
 
 public static class Program
 {
     public static void Main()
     {
-        Console.WriteLine("Hello World!");
+        var challenge = new Challenge(2023, 1);
+        var example1 = challenge.ReadInput("example1.txt");
+        var example2 = challenge.ReadInput("example2.txt");
+        var actual = challenge.ReadInput("actual.txt");
 
-        var example1 = File.ReadAllLines("./res/Year2023/Day01/example1.txt");
-        var example2 = File.ReadAllLines("./res/Year2023/Day01/example2.txt");
-        var actual = File.ReadAllLines("./res/Year2023/Day01/actual.txt");
+        var one = new Part<int>("Calibration sum", PartOne);
+        var two = new Part<int>("Advanced calibration sum", PartTwo);
 
-        Console.WriteLine($"Part one: {PartOne(example1)}");
-        Console.WriteLine($"Part one: {PartOne(actual)}");
+        Console.WriteLine(one.Test(142, example1));
+        Console.WriteLine(two.Test(281, example2));
 
-        var test = PartTwo(example2);
-        Console.WriteLine($"Part two: {test} {test == 281}");
-        Console.WriteLine($"Part two: {PartTwo(actual)}");
+        Console.WriteLine(one.Run(actual));
+        Console.WriteLine(two.Run(actual));
     }
 
-    public static int PartOne(string[] lines)
+    public static int PartOne(string input)
     {
         var sum = 0;
+        var lines = input.Split(Environment.NewLine);
         foreach (var line in lines)
         {
             int first = 0, last = 0;
@@ -47,7 +101,7 @@ public static class Program
         return sum;
     }
 
-    public static int PartTwo(string[] lines)
+    public static int PartTwo(string input)
     {
         var numberWords = new Dictionary<string, int>()
         {
@@ -63,6 +117,7 @@ public static class Program
         };
 
         var sum = 0;
+        var lines = input.Split(Environment.NewLine);
         foreach (var line in lines)
         {
             int first = 0, last = 0;
@@ -116,7 +171,7 @@ public static class Program
                     break;
                 }
             }
-            Console.WriteLine(first * 10 + last);
+            //Console.WriteLine(first * 10 + last);
 
             sum += first * 10 + last;
         }
