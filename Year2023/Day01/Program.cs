@@ -1,54 +1,5 @@
 ﻿using System.Diagnostics;
-
-public record Challenge(int year, int day)
-{
-    public string ReadInput(string filename)
-    {
-        var paddedDay = day.ToString().PadLeft(2, '0');
-        return File.ReadAllText($"./res/Year{year}/Day{paddedDay}/{filename}");
-    }
-}
-
-public delegate T Solve<T>(string input);
-
-public class Part<T> where T : struct
-{
-    private string name;
-    private Solve<T> solve;
-
-    public Part(string name, Solve<T> solve)
-    {
-        this.name = name;
-        this.solve = solve;
-    }
-
-    public string Test(T expected, string input)
-    {
-        var actual = solve(input);
-        if (EqualityComparer<T>.Default.Equals(actual, expected))
-        {
-            return $"[TEST] Part {name}: PASS";
-        }
-        else
-        {
-            return $"[TEST] Part {name}: FAIL (expected: {expected}, found {actual})";
-        }
-    }
-
-    public string Run(string input)
-    {
-        var watch = Stopwatch.StartNew();
-        var result = solve(input);
-        watch.Stop();
-
-        var nanosecondsPerTick = 1_000L * 1_000L * 1_000L / Stopwatch.Frequency;
-        var deltaInMicroseconds = watch.ElapsedTicks / nanosecondsPerTick / 1_000.0;
-        return $"""
-        {name} ({deltaInMicroseconds} µs):
-        {result}
-        """;
-    }
-}
+using Util.Aoc;
 
 public static class Program
 {
@@ -69,36 +20,38 @@ public static class Program
         Console.WriteLine(two.Run(actual));
     }
 
-    public static int PartOne(string input)
+    private static int PartOne(string input)
     {
-        var sum = 0;
-        var lines = input.Split(Environment.NewLine);
-        foreach (var line in lines)
-        {
-            int first = 0, last = 0;
-            for (var i = 0; i < line.Length; i += 1)
-            {
-                if (char.IsDigit(line[i]))
-                {
-                    first = line[i] - '0';
-                    break;
-                }
-            }
-            for (var i = line.Length - 1; i >= 0; i -= 1)
-            {
-                if (char.IsDigit(line[i]))
-                {
-                    last = line[i] - '0';
-                    break;
-                }
-            }
-            sum += first * 10 + last;
-        }
-
-        return sum;
+        return input.Split(Environment.NewLine)
+            .Select((line) => FindFirstNumber(line) * 10 + FindLastNumber(line))
+            .Sum();
     }
 
-    public static int PartTwo(string input)
+    private static int FindFirstNumber(string line)
+    {
+        for (var i = 0; i < line.Length; i += 1)
+        {
+            if (char.IsDigit(line[i]))
+            {
+                return line[i] - '0';
+            }
+        }
+        throw new UnreachableException("Line has to contain at least one number.");
+    }
+
+    private static int FindLastNumber(string line)
+    {
+        for (var i = line.Length - 1; i >= 0; i -= 1)
+        {
+            if (char.IsDigit(line[i]))
+            {
+                return line[i] - '0';
+            }
+        }
+        throw new UnreachableException("Line has to contain at least one number.");
+    }
+
+    private static int PartTwo(string input)
     {
         var numberWords = new Dictionary<string, int>()
         {
