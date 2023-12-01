@@ -18,11 +18,11 @@ public class Part<T> where T : struct
         var actual = solve(input);
         if (EqualityComparer<T>.Default.Equals(actual, expected))
         {
-            return $"[TEST] Part {name}: PASS";
+            return $"[TEST] {name}: PASS";
         }
         else
         {
-            return $"[TEST] Part {name}: FAIL (expected: {expected}, found {actual})";
+            return $"[TEST] {name}: FAIL (expected: {expected}, found {actual})";
         }
     }
 
