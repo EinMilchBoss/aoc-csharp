@@ -17,5 +17,7 @@ public readonly record struct Game(int Id, Set[] Sets)
         return new Game(id, sets);
     }
 
-    public readonly bool IsPossible() => Sets.All((set) => set.R <= MAX_R && set.G <= MAX_G && set.B <= MAX_B);
+    public bool IsPossible() => Sets.All((set) => set.R <= MAX_R && set.G <= MAX_G && set.B <= MAX_B);
+
+    public Set MinimalSet() => Sets.Aggregate((a, b) => new Set(Math.Max(a.R, b.R), Math.Max(a.G, b.G), Math.Max(a.B, b.B)));
 }

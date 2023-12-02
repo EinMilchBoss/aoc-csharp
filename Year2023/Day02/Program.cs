@@ -6,13 +6,13 @@ var example = challenge.ReadInput("example.txt");
 var actual = challenge.ReadInput("actual.txt");
 
 var one = new Part<int>("Sum of possible games", PartOne);
-var two = new Part<int>("N/A", PartTwo);
+var two = new Part<int>("Power of minimal game sets", PartTwo);
 
 Console.WriteLine(one.Test(8, example));
-//Console.WriteLine(two.Test(-1, example));
+Console.WriteLine(two.Test(2286, example));
 
 Console.WriteLine(one.Run(actual));
-//Console.WriteLine(two.Run(actual));
+Console.WriteLine(two.Run(actual));
 
 int PartOne(string input) => input.Split(Environment.NewLine)
     .Select(Game.FromString)
@@ -20,7 +20,6 @@ int PartOne(string input) => input.Split(Environment.NewLine)
     .Select((game) => game.Id)
     .Sum();
 
-int PartTwo(string input)
-{
-    return 0;
-}
+int PartTwo(string input) => input.Split(Environment.NewLine)
+    .Select((line) => Game.FromString(line).MinimalSet().Power())
+    .Sum();

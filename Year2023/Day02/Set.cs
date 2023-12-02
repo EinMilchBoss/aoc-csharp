@@ -27,4 +27,6 @@ public readonly record struct Set(int R, int G, int B)
         }
         return new Set(r, g, b);
     }
+
+    public int Power() => R * G * B;
 }
