@@ -6,13 +6,13 @@ var example = challenge.ReadInput("example.txt");
 var actual = challenge.ReadInput("actual.txt");
 
 var one = new Part<int>("Sum of adjacent part numbers", PartOne);
-var two = new Part<int>("N/A", PartTwo);
+var two = new Part<int>("Sum of all part numbers of gears", PartTwo);
 
 Console.WriteLine(one.Test(4361, example));
-//Console.WriteLine(two.Test(-1, example));
+Console.WriteLine(two.Test(467835, example));
 
 Console.WriteLine(one.Run(actual));
-//Console.WriteLine(two.Run(actual));
+Console.WriteLine(two.Run(actual));
 
 int PartOne(string input)
 {
@@ -27,5 +27,9 @@ int PartOne(string input)
 
 int PartTwo(string input)
 {
-    return 0;
+    var grid = new Grid(input);
+    var partNumbers = grid.FindPartNumbers();
+    return grid.GetGearNumbers(partNumbers)
+        .Select(grid.Ratio)
+        .Sum();
 }

@@ -70,4 +70,28 @@ public class Grid
     }
 
     private bool IsSymbol(char c) => !char.IsDigit(c) && c != '.';
+
+    public IEnumerable<(PartNumber, PartNumber)> GetGearNumbers(IEnumerable<PartNumber> numbers)
+    {
+        var gearNumbers = new List<(PartNumber, PartNumber)>();
+        for (var y = 0; y < Lines.Length; y += 1)
+        {
+            for (var x = 0; x < Lines[y].Length; x += 1)
+            {
+                if (!IsPotentialGear(Lines[y][x])) continue;
+
+                var potentialGear = new Position(x, y);
+                var newGearNumbers = numbers.Where(potentialGear.IsInRange).ToList();
+
+                if (newGearNumbers.Count() != 2) continue;
+
+                gearNumbers.Add((newGearNumbers[0], newGearNumbers[1]));
+            }
+        }
+        return gearNumbers;
+    }
+
+    private bool IsPotentialGear(char c) => c == '*';
+
+    public int Ratio((PartNumber a, PartNumber b) pair) => ParseNumber(pair.a) * ParseNumber(pair.b);
 }
