@@ -29,7 +29,7 @@ public readonly record struct Card(IEnumerable<int> Winning, IEnumerable<int> Ac
         return Iterate(0);
     }
 
-    public int Points()
+    public int GetPoints()
     {
         var count = GetMatches();
         return (count == 0) ? 0 : (int)Math.Pow(2, count - 1);

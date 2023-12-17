@@ -16,7 +16,7 @@ Console.WriteLine(two.Run(actual));
 
 int PartOne(string input) => input
     .Split(Environment.NewLine)
-    .Select((line) => Card.Parse(line).Points())
+    .Select((line) => Card.Parse(line).GetPoints())
     .Sum();
 
 int PartTwo(string input) => input
