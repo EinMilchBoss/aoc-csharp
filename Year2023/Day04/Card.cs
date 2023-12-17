@@ -31,11 +31,13 @@ public readonly record struct Card(IEnumerable<int> Winning, IEnumerable<int> Ac
 
     public int Points()
     {
-        var count = Winning
-            .Intersect(Actual)
-            .Count();
+        var count = GetMatches();
         return (count == 0) ? 0 : (int)Math.Pow(2, count - 1);
     }
+
+    public int GetMatches() => Winning
+        .Intersect(Actual)
+        .Count();
 
     public override string ToString() => GetLine(Winning)
         .Append("| ")
