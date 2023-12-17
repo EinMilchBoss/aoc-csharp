@@ -44,5 +44,5 @@ public readonly record struct Card(IEnumerable<int> Winning, IEnumerable<int> Ac
         .Append(GetLine(Actual).ToString())
         .ToString();
 
-    private StringBuilder GetLine(IEnumerable<int> ints) => ints.Aggregate(new StringBuilder(), (a, b) => a.Append($"{b,2} "));
+    private static StringBuilder GetLine(IEnumerable<int> ints) => ints.Aggregate(new StringBuilder(), (a, b) => a.Append($"{b,2} "));
 }
