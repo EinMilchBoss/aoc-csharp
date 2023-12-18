@@ -31,6 +31,17 @@ public readonly record struct Almanac
         );
     }
 
+    public uint GetLocation(uint seed)
+    {
+        var soil = SeedToSoil.Convert(seed);
+        var fertilizer = SoilToFertilizer.Convert(soil);
+        var water = FertilizerToWater.Convert(fertilizer);
+        var light = WaterToLight.Convert(water);
+        var temperature = LightToTemperature.Convert(light);
+        var humidity = TemperatureToHumidity.Convert(temperature);
+        return HumidityToLocation.Convert(humidity);
+    }
+
     public override string ToString() => new StringBuilder()
             .AppendLine("seed-to-soil map:")
             .AppendLine(SeedToSoil.ToString())
