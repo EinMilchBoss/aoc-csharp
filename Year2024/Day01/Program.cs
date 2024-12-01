@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Util.Aoc;
+﻿using Util.Aoc;
 
 var challenge = new Challenge(2024, 1);
 var example = challenge.ReadInput("example.txt");
