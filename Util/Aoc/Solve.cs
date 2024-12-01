@@ -1,3 +1,3 @@
 namespace Util.Aoc;
 
-public delegate T Solve<T>(string input);
+public delegate T Solve<out T>(string input);

@@ -4,38 +4,33 @@ namespace Util.Aoc;
 
 public class Part<T> where T : struct
 {
-    private string name;
-    private Solve<T> solve;
+    private readonly string _name;
+    private readonly Solve<T> _solve;
 
     public Part(string name, Solve<T> solve)
     {
-        this.name = name;
-        this.solve = solve;
+        _name = name;
+        _solve = solve;
     }
 
     public string Test(T expected, string input)
     {
-        var actual = solve(input);
-        if (EqualityComparer<T>.Default.Equals(actual, expected))
-        {
-            return $"[TEST] {name}: PASS";
-        }
-        else
-        {
-            return $"[TEST] {name}: FAIL (expected: {expected}, found {actual})";
-        }
+        var actual = _solve(input);
+        return EqualityComparer<T>.Default.Equals(actual, expected) 
+            ? $"[TEST] {_name}: PASS" 
+            : $"[TEST] {_name}: FAIL (expected: {expected}, found {actual})";
     }
 
     public string Run(string input)
     {
         var watch = Stopwatch.StartNew();
-        var result = solve(input);
+        var result = _solve(input);
         watch.Stop();
 
         var nanosecondsPerTick = 1_000L * 1_000L * 1_000L / Stopwatch.Frequency;
-        var deltaInMicroseconds = watch.ElapsedTicks / nanosecondsPerTick / 1_000.0;
+        var deltaInMicroseconds = watch.ElapsedTicks / nanosecondsPerTick / 1_000;
         return $"""
-        {name} ({deltaInMicroseconds} µs):
+        {_name} ({deltaInMicroseconds} µs):
         {result}
         """;
     }
