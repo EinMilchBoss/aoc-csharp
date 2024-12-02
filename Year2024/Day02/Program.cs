@@ -53,7 +53,7 @@ int[][] ParseReports(string input)
 bool IsReportValid(int[] report)
 {
     var levelDifferences = GetDifferences(report);
-    if (AreDeltasValid(levelDifferences))
+    if (!AreDeltasValid(levelDifferences))
         return false;
     
     var positiveLevels = levelDifferences.Count(int.IsPositive);
@@ -70,10 +70,10 @@ int[] GetDifferences(int[] values)
 
 bool AreDeltasValid(int[] differences)
 {
-    return differences.Any(difference =>
+    return differences.All(difference =>
     {
         var delta = Math.Abs(difference);
-        return delta is < 1 or > 3;
+        return delta is >= 1 and <= 3;
     });
 }
 
