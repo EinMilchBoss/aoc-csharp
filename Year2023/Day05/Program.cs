@@ -1,48 +1,31 @@
-﻿using System.Collections.Immutable;
-using Day05;
+﻿using System.Diagnostics;
 using Util.Aoc;
 
 var challenge = new Challenge(2023, 5);
 var example = challenge.ReadInput("example.txt");
 var actual = challenge.ReadInput("actual.txt");
 
-// var one = new Part<uint>("Nearest location of seeds", PartOne);
+var one = new Part<long>("Nearest location of seeds", PartOne);
 var two = new Part<long>("Nearest location of seed ranges", PartTwo);
 
-// Console.WriteLine(one.Test(35, example));
+Console.WriteLine(one.Test(35, example));
 Console.WriteLine(two.Test(46, example));
 
-// Console.WriteLine(one.Run(actual));
+Console.WriteLine(one.Run(actual));
 Console.WriteLine(two.Run(actual));
 
 return;
 
-/*uint PartOne(string input)
+long PartOne(string input)
 {
     var emptyLine = string.Join("", Enumerable.Repeat(Environment.NewLine, 2));
     var blocks = input.Split(emptyLine);
+
     var seeds = ParseSeeds(blocks.First());
-    var almanac = Almanac.Parse(blocks.Skip(1));
+    var almanac = Almanac.FromBlocks(blocks.Skip(1));
 
-    // Console.WriteLine($"seeds: {string.Join(' ', seeds)}");
-    // Console.WriteLine();
-    // Console.WriteLine(almanac);
-
-    return seeds.Min(almanac.GetLocation);
-}*/
-
-IEnumerable<uint> ParseSeeds(string line)
-{
-    var seeds = line.Split(": ")[1];
-    return seeds.Split(' ').Select(uint.Parse);
+    return seeds.Min(almanac.Translate);
 }
-
-IEnumerable<Interval> ParseSeedIntervals(string line) =>
-    line.Split(": ")[1]
-        .Split(' ')
-        .Select(long.Parse)
-        .Chunk(2)
-        .Select(pair => new Interval(pair[0], pair[0] + pair[1]));
 
 long PartTwo(string input)
 {
@@ -58,6 +41,19 @@ long PartTwo(string input)
         .Start;
 }
 
+IEnumerable<long> ParseSeeds(string line) =>
+    line
+        .Split(": ")[1]
+        .Split(' ')
+        .Select(long.Parse);
+
+IEnumerable<Interval> ParseSeedIntervals(string line) =>
+    line.Split(": ")[1]
+        .Split(' ')
+        .Select(long.Parse)
+        .Chunk(2)
+        .Select(pair => new Interval(pair[0], pair[0] + pair[1]));
+
 class Almanac
 {
     private readonly IEnumerable<Map> _maps;
@@ -71,8 +67,16 @@ class Almanac
         new
         ([
             ..blocks
-            .Select(Map.Parse)
+            .Select(Map.FromBlock)
         ]);
+
+    public long Translate(long seed)
+    {
+        foreach (var map in _maps)
+            seed = map.Translate(seed);
+
+        return seed;
+    }
 
     public IEnumerable<Interval> Translate(Interval interval)
     {
@@ -120,11 +124,11 @@ class Map
         return true;
     }
 
-    public static Map Parse(string block)
+    public static Map FromBlock(string block)
     {
         var intervals = block.Split(Environment.NewLine)
             .Skip(1)
-            .Select(TranslationInterval.Parse)
+            .Select(TranslationInterval.FromLine)
             .ToList();
 
         var sortedIntervals = FillGaps(intervals);
@@ -134,7 +138,7 @@ class Map
 
     /// <summary>
     /// The list of intervals contains gaps where no translation occurs.
-    /// This method adds artificial <see cref="TranslationInterval"/> with offset 0 to have all values from [0, long.MaxValue] covered by a <see cref="TranslationInterval"/>.
+    /// This method adds artificial <see cref="TranslationInterval"/> with offset 0 to have all values from [0, long.MaxValue) covered by a <see cref="TranslationInterval"/>.
     /// </summary>
     /// <param name="intervals"></param>
     /// <returns></returns>
@@ -164,6 +168,19 @@ class Map
             allIntervals.Add(new(nextStart, long.MaxValue, 0));
 
         return allIntervals;
+    }
+
+    public long Translate(long seed)
+    {
+        foreach (var interval in _sortedIntervals)
+        {
+            if (interval.Contains(seed))
+            {
+                return seed + interval.Offset;
+            }
+        }
+
+        throw new UnreachableException("Seed is not in [0, long.MaxValue).");
     }
 
     public IEnumerable<Interval> Translate(Interval source)
@@ -207,7 +224,7 @@ record TranslationInterval(long Start, long End, long Offset) :
         this(interval.Start, interval.End, offset)
     { }
 
-    public static TranslationInterval Parse(string line)
+    public static TranslationInterval FromLine(string line)
     {
         string[] parts = line.Split(' ');
         var dstStart = long.Parse(parts[0]);
