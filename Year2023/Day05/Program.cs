@@ -37,21 +37,19 @@ IEnumerable<uint> ParseSeeds(string line)
     return seeds.Split(' ').Select(uint.Parse);
 }
 
-ICollection<Interval> ParseSeedRanges(string line) =>
-    [
-        ..line.Split(": ")[1]
+IEnumerable<Interval> ParseSeedIntervals(string line) =>
+    line.Split(": ")[1]
         .Split(' ')
         .Select(long.Parse)
         .Chunk(2)
-        .Select(pair => new Interval(pair[0], pair[0] + pair[1]))
-    ];
+        .Select(pair => new Interval(pair[0], pair[0] + pair[1]));
 
 long PartTwo(string input)
 {
     string emptyLine = string.Join("", Enumerable.Repeat(Environment.NewLine, 2));
     string[] blocks = input.Split(emptyLine);
 
-    var seeds = ParseSeedRanges(blocks.First());
+    var seeds = ParseSeedIntervals(blocks.First());
     var almanac = Almanac.FromBlocks(blocks.Skip(1));
 
     return seeds
@@ -62,9 +60,9 @@ long PartTwo(string input)
 
 class Almanac
 {
-    private readonly IReadOnlyCollection<Map> _maps;
+    private readonly IEnumerable<Map> _maps;
 
-    private Almanac(IReadOnlyCollection<Map> maps)
+    private Almanac(IEnumerable<Map> maps)
     {
         _maps = maps;
     }
@@ -76,7 +74,7 @@ class Almanac
             .Select(Map.Parse)
         ]);
 
-    public ICollection<Interval> Translate(Interval interval)
+    public IEnumerable<Interval> Translate(Interval interval)
     {
         List<Interval> intervals = [interval];
         foreach (var map in _maps)
@@ -168,37 +166,37 @@ class Map
         return allIntervals;
     }
 
-    public List<Interval> Translate(Interval src)
+    public IEnumerable<Interval> Translate(Interval source)
     {
+        List<Interval> destinations = [];
+
         // Scan through all intervals and keep track of where we are.
         int i = 0;
 
         // Find the first interval to start with.
         for (; i < _sortedIntervals.Count; i++)
         {
-            if (_sortedIntervals[i].Contains(src.Start))
+            if (_sortedIntervals[i].Contains(source.Start))
                 break;
         }
 
-        List<Interval> translatedIntervals = [];
-
         // The first interval could start in the middle of the i-th interval.
         // Therefore, we have to start with the source interval's start value.
-        long start = src.Start;
+        long start = source.Start;
 
         // Offset sub-intervals of input by entire intervals for as long as they are fully contained.
-        for (; _sortedIntervals[i].End < src.End; i++)
+        for (; _sortedIntervals[i].End < source.End; i++)
         {
-            translatedIntervals.Add(new(start + _sortedIntervals[i].Offset, _sortedIntervals[i].End + _sortedIntervals[i].Offset));
+            destinations.Add(new(start + _sortedIntervals[i].Offset, _sortedIntervals[i].End + _sortedIntervals[i].Offset));
 
             start = _sortedIntervals[i].End;
         }
 
         // Add the last sub-interval that is not fully contained.
         // We only translate until the end of the source interval's end value.
-        translatedIntervals.Add(new(start + _sortedIntervals[i].Offset, src.End + _sortedIntervals[i].Offset));
+        destinations.Add(new(start + _sortedIntervals[i].Offset, source.End + _sortedIntervals[i].Offset));
 
-        return translatedIntervals;
+        return destinations;
     }
 }
 
