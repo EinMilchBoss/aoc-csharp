@@ -18,22 +18,20 @@ return;
 
 long PartOne(string input)
 {
-    var emptyLine = string.Join("", Enumerable.Repeat(Environment.NewLine, 2));
-    var blocks = input.Split(emptyLine);
+    var blocks = input.Split($"{Environment.NewLine}{Environment.NewLine}");
 
-    var seeds = ParseSeeds(blocks.First());
-    var almanac = Almanac.FromBlocks(blocks.Skip(1));
+    var seeds = ParseSeeds(blocks[0]);
+    var almanac = Almanac.FromBlocks(blocks[1..]);
 
     return seeds.Min(almanac.Translate);
 }
 
 long PartTwo(string input)
 {
-    string emptyLine = string.Join("", Enumerable.Repeat(Environment.NewLine, 2));
-    string[] blocks = input.Split(emptyLine);
+    var blocks = input.Split($"{Environment.NewLine}{Environment.NewLine}");
 
-    var seeds = ParseSeedIntervals(blocks.First());
-    var almanac = Almanac.FromBlocks(blocks.Skip(1));
+    var seeds = ParseSeedIntervals(blocks[0]);
+    var almanac = Almanac.FromBlocks(blocks[1..]);
 
     return seeds
         .SelectMany(almanac.Translate)
@@ -48,27 +46,16 @@ IEnumerable<long> ParseSeeds(string line) =>
         .Select(long.Parse);
 
 IEnumerable<Interval> ParseSeedIntervals(string line) =>
-    line.Split(": ")[1]
-        .Split(' ')
-        .Select(long.Parse)
+    ParseSeeds(line)
         .Chunk(2)
         .Select(pair => new Interval(pair[0], pair[0] + pair[1]));
 
-class Almanac
+class Almanac(IEnumerable<Map> maps)
 {
-    private readonly IEnumerable<Map> _maps;
-
-    private Almanac(IEnumerable<Map> maps)
-    {
-        _maps = maps;
-    }
+    private readonly List<Map> _maps = [.. maps];
 
     public static Almanac FromBlocks(IEnumerable<string> blocks) =>
-        new
-        ([
-            ..blocks
-            .Select(Map.FromBlock)
-        ]);
+        new([.. blocks.Select(Map.FromBlock)]);
 
     public long Translate(long seed)
     {
@@ -100,7 +87,7 @@ class Map
 {
     private readonly List<TranslationInterval> _sortedIntervals;
 
-    private Map(IEnumerable<TranslationInterval> intervals)
+    public Map(IEnumerable<TranslationInterval> intervals)
     {
         List<TranslationInterval> sortedIntervals = [.. intervals];
 
@@ -172,30 +159,16 @@ class Map
 
     public long Translate(long seed)
     {
-        foreach (var interval in _sortedIntervals)
-        {
-            if (interval.Contains(seed))
-            {
-                return seed + interval.Offset;
-            }
-        }
-
-        throw new UnreachableException("Seed is not in [0, long.MaxValue).");
+        int i = BinarySearchIndex(seed);
+        return seed + _sortedIntervals[i].Offset;
     }
 
     public IEnumerable<Interval> Translate(Interval source)
     {
         List<Interval> destinations = [];
 
-        // Scan through all intervals and keep track of where we are.
-        int i = 0;
-
-        // Find the first interval to start with.
-        for (; i < _sortedIntervals.Count; i++)
-        {
-            if (_sortedIntervals[i].Contains(source.Start))
-                break;
-        }
+        // To scan through all intervals we keep track of where we are.
+        int i = BinarySearchIndex(source.Start);
 
         // The first interval could start in the middle of the i-th interval.
         // Therefore, we have to start with the source interval's start value.
@@ -214,6 +187,23 @@ class Map
         destinations.Add(new(start + _sortedIntervals[i].Offset, source.End + _sortedIntervals[i].Offset));
 
         return destinations;
+    }
+
+    private int BinarySearchIndex(long value)
+    {
+        int start = 0, end = _sortedIntervals.Count - 1;
+        while (start <= end)
+        {
+            int middle = start + (end - start) / 2;
+            if (value < _sortedIntervals[middle].Start)
+                end = middle - 1;
+            else if (value >= _sortedIntervals[middle].End)
+                start = middle + 1;
+            else
+                return middle;
+        }
+
+        throw new UnreachableException("Value could not be found in [0, long.MaxValue).");
     }
 }
 
@@ -244,9 +234,9 @@ record Interval(long Start, long End) : IComparable<Interval>
     /// <returns></returns>
     public int CompareTo(Interval? other)
     {
-        ArgumentException.ThrowIfNullOrEmpty(nameof(other));
+        ArgumentNullException.ThrowIfNull(other, nameof(other));
 
-        return Start.CompareTo(other!.Start);
+        return Start.CompareTo(other.Start);
     }
 
     public bool Contains(long value) =>
