@@ -1,5 +1,4 @@
-﻿using System.Net.Security;
-using Util.Aoc;
+﻿using Util.Aoc;
 
 var challenge = new Challenge(2023, 6);
 var example = challenge.ReadInput("example.txt");
@@ -22,16 +21,16 @@ long PartOne(string input)
     IEnumerable<int> times = split[0][1..].Select(int.Parse);
     IEnumerable<int> distances = split[1][1..].Select(int.Parse);
 
-    List<Race> races = [.. times.Zip(distances).Select(pair => new Race(pair.First, pair.Second))];
-
-    return races.Aggregate(1L, (acc, race) => acc * race.CountBrokenRecordVariants());
+    return times
+        .Zip(distances, (time, distance) => new Race(time, distance))
+        .Aggregate(1L, (acc, race) => acc * race.CountBrokenRecordVariants());
 }
 
 long PartTwo(string input)
 {
     string[][] split = SplitByLineAndWords(input);
-    long times = long.Parse(string.Join(string.Empty, split[0][1..]));
-    long distances = long.Parse(string.Join(string.Empty, split[1][1..]));
+    long times = long.Parse(string.Concat(split[0][1..]));
+    long distances = long.Parse(string.Concat(split[1][1..]));
 
     Race race = new(times, distances);
     return race.CountBrokenRecordVariants();
@@ -48,67 +47,15 @@ readonly record struct Race(long Time, long Record)
 {
     public long CountBrokenRecordVariants()
     {
-        // Value was found out empirically.
-        const int APPROXIMATION_ITERATIONS = 7;
+        // Exact lower and upper bounds using quadratic formula.
+        double discriminant = Math.Sqrt((double)Time * Time - 4 * Record);
+        double root1 = (Time - discriminant) / 2.0;
+        double root2 = (Time + discriminant) / 2.0;
 
-        double approximation = ApproximateFirstBrokenRecord(APPROXIMATION_ITERATIONS);
-        long firstBrokenRecord = (long)Math.Ceiling(approximation);
+        // Calculate start and end of exceeding records.
+        long first = (long)Math.Floor(root1) + 1;
+        long last = (long)Math.Ceiling(root2) - 1;
 
-        // Avoid "/ 2" by using ">> 1".
-        long halfTime = (Time + 1) >> 1;
-
-        // We use the fact that the function is symmetrical.
-        // Use "<< 1" instead of "* 2".
-        long counter = (halfTime - firstBrokenRecord) << 1;
-
-        // Make sure to count the middle value only once.
-        // This is only relevant for even times (including 0, they are odd).
-        if ((Time & 0b1) == 0b0 && ExceedsRecord(halfTime))
-            counter += 1;
-
-        return counter;
+        return last - first + 1;
     }
-
-    private bool ExceedsRecord(long chargeTime)
-    {
-        long travelTime = Time - chargeTime;
-        return travelTime * chargeTime > Record;
-    }
-
-    /// <summary>
-    /// Newton's method for approximating the root of our distance function.
-    /// </summary>
-    /// <param name="iterations">The amount of iterations for approximating the value.</param>
-    /// <returns>Approximately, the first charge time to break the record of the race.</returns>
-    private double ApproximateFirstBrokenRecord(int iterations)
-    {
-        double x = 0;
-        for (int i = 0; i < iterations; i++)
-            x -= F(x) / DF(x);
-        return x;
-    }
-
-    /// <summary>
-    /// f(x)<br/>
-    /// = (t - x) * x - r<br/>
-    /// = t*x - x^2 - r<br/>
-    /// = -x^2 + t*x - r<br/>
-    /// <br/>
-    /// t := Time, r := Record
-    /// </summary>
-    /// <param name="x">The charge time.</param>
-    /// <returns>The traveled distance.</returns>
-    private double F(double x) =>
-        -(x * x) + Time * x - Record;
-
-    /// <summary>
-    /// d/dx[f(x, t, d)]<br/>
-    /// = -2x + t<br/>
-    /// <br/>
-    /// t := Time
-    /// </summary>
-    /// <param name="x">The charge time.</param>
-    /// <returns></returns>
-    private double DF(double x) =>
-        -2 * x + Time;
 }
