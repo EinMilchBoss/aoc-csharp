@@ -1,4 +1,5 @@
-﻿using Util.Aoc;
+﻿using System.Net.Security;
+using Util.Aoc;
 
 var challenge = new Challenge(2023, 6);
 var example = challenge.ReadInput("example.txt");
@@ -47,22 +48,18 @@ readonly record struct Race(long Time, long Record)
 {
     public long CountBrokenRecordVariants()
     {
+        // Value was found out empirically.
+        const int APPROXIMATION_ITERATIONS = 7;
+
+        double approximation = ApproximateFirstBrokenRecord(APPROXIMATION_ITERATIONS);
+        long firstBrokenRecord = (long)Math.Ceiling(approximation);
+
         // Avoid "/ 2" by using ">> 1".
         long halfTime = (Time + 1) >> 1;
 
-        // Always ignore the 0th iteration as it always yields 0.
-        // We only iterate until we find the first match and derive the rest.
-        long chargeTime = 1;
-        while (chargeTime < halfTime)
-        {
-            if (ExceedsRecord(chargeTime))
-                break;
-
-            chargeTime++;
-        }
-
+        // We use the fact that the function is symmetrical.
         // Use "<< 1" instead of "* 2".
-        long counter = (halfTime - chargeTime) << 1;
+        long counter = (halfTime - firstBrokenRecord) << 1;
 
         // Make sure to count the middle value only once.
         // This is only relevant for even times (including 0, they are odd).
@@ -77,4 +74,41 @@ readonly record struct Race(long Time, long Record)
         long travelTime = Time - chargeTime;
         return travelTime * chargeTime > Record;
     }
+
+    /// <summary>
+    /// Newton's method for approximating the root of our distance function.
+    /// </summary>
+    /// <param name="iterations">The amount of iterations for approximating the value.</param>
+    /// <returns>Approximately, the first charge time to break the record of the race.</returns>
+    private double ApproximateFirstBrokenRecord(int iterations)
+    {
+        double x = 0;
+        for (int i = 0; i < iterations; i++)
+            x -= F(x) / DF(x);
+        return x;
+    }
+
+    /// <summary>
+    /// f(x)<br/>
+    /// = (t - x) * x - r<br/>
+    /// = t*x - x^2 - r<br/>
+    /// = -x^2 + t*x - r<br/>
+    /// <br/>
+    /// t := Time, r := Record
+    /// </summary>
+    /// <param name="x">The charge time.</param>
+    /// <returns>The traveled distance.</returns>
+    private double F(double x) =>
+        -(x * x) + Time * x - Record;
+
+    /// <summary>
+    /// d/dx[f(x, t, d)]<br/>
+    /// = -2x + t<br/>
+    /// <br/>
+    /// t := Time
+    /// </summary>
+    /// <param name="x">The charge time.</param>
+    /// <returns></returns>
+    private double DF(double x) =>
+        -2 * x + Time;
 }
