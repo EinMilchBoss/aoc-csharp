@@ -64,10 +64,9 @@ readonly record struct Race(long Time, long Record)
         // Use "<< 1" instead of "* 2".
         long counter = (halfTime - chargeTime) << 1;
 
-
         // Make sure to count the middle value only once.
-        // This is only relevant for odd times.
-        if (((Time + 1) & 0b1) == 0b1 && ExceedsRecord(halfTime))
+        // This is only relevant for even times (including 0, they are odd).
+        if ((Time & 0b1) == 0b0 && ExceedsRecord(halfTime))
             counter += 1;
 
         return counter;
